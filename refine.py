@@ -10,11 +10,13 @@ cur.execute('''CREATE TABLE IF NOT EXISTS Currency
 
 conn_1=sqlite3.connect('file:exchangert.sqlite?mode=ro', uri=True)
 cur_1 = conn_1.cursor()
-cur_1.execute('''SELECT 幣別_currency,現金買入_cashbr, 現金賣出_cashsr,即期買入_spotbr,即期賣出_spotsr FROM Currency''')
+cur_1.execute('''SELECT 幣別_currency,現金買入_cashbr, 現金賣出_cashsr,即期買入_spotbr,即期賣出_spotsr,遠期10日買進_far10dbuy ,遠期10日賣出_10daysell,
+遠期30日買進_far30dbuy ,遠期30日賣出_30daysell,遠期60日買進_far60dbuy ,遠期60日賣出_60daysell FROM Currency''')
 print('=============================================')
-#clean data, only keep the complete data series and remove:
-#(1) the currency data which 現金買入_cashbr < input number
+#clean data:
+#(1) remove the currency data which 現金買入_cashbr < input number
 #(2) only keep the column about today's information
+#(3) remove the data which contain None in it
 text=list()
 cashbr_criteria=input('Enter the minimum cashbr value:')
 try:
