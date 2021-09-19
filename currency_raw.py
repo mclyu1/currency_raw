@@ -13,7 +13,8 @@ cur.executescript('''DROP TABLE IF EXISTS Currency;''')
 
 cur.execute('''CREATE TABLE IF NOT EXISTS Currency
     (id INTEGER PRIMARY KEY, 幣別_currency TEXT UNIQUE, 現金買入_cashbr REAL , 現金賣出_cashsr  REAL,
-     即期買入_spotbr  REAL, 即期賣出_spotsr  REAL, 遠期10日買進_far10dbuy  REAL,遠期10日賣出_10daysell  REAL)''')
+     即期買入_spotbr  REAL, 即期賣出_spotsr  REAL, 遠期10日買進_far10dbuy  REAL,遠期10日賣出_10daysell  REAL,
+     遠期30日買進_far30dbuy  REAL,遠期30日賣出_30daysell  REAL,遠期60日買進_far60dbuy  REAL,遠期60日賣出_60daysell  REAL)''')
 
 
 url=input("enter the url:")
@@ -34,10 +35,10 @@ for i in content:
 print("=================================================")
 webs=list()
 for i in con1:
-  currency_tit=i.find_all('div',class_='hidden-phone print_show')
-  cashchangert=i.find_all('td',class_='rate-content-cash text-right print_hide')
-  spotchangert=i.find_all('td',class_='rate-content-sight text-right print_hide')
-  newur=i.find_all('a')
+  currency_tit=i('div',class_='hidden-phone print_show')
+  cashchangert=i('td',class_='rate-content-cash text-right print_hide')
+  spotchangert=i('td',class_='rate-content-sight text-right print_hide')
+  newur=i('a')
 
   newurl=(web+newur[0].get('href')) #記錄遠期匯率網址相對位置
   webs.append(newurl) #絕對網址
@@ -67,6 +68,7 @@ for i in con1:
 conn.commit()
 #open other web\ from current website to catch past 10days average data of each currency
 count=1
+
 for web in webs: 
   request=urllib.request.Request(web, headers = {
   "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0"})
@@ -74,26 +76,29 @@ for web in webs:
   data=document.read().decode()
   root=BeautifulSoup(data,"html.parser") 
   content=root('tbody')
+  farbuy=list()
+  farsell=list()
   for i in content:
-   con1=i('tr')
+    con1=i('tr')
   for i in con1:
-   far=i.find_all('td',class_='text-right')
-
-   far10b=far[0].text.strip()
-   try:
-    a=float(far10b)
-   except:
-    far10b=None
-   far10s=far[1].text.strip()
-   try:
-    a=float(far10s)
-   except:
-    far10s=None
-    
-   if far10b !=None or far10b !=None:
-     break
-  cur.execute('UPDATE Currency SET (遠期10日買進_far10dbuy,遠期10日賣出_10daysell )=(?,?) WHERE id=?', (far10b,far10s,count) )
+    far=i('td',class_='text-right')
+    farb=far[0].text.strip()
+    try:
+      a=float(farb)
+    except:
+      farb=None
+    farbuy.append(farb)
+    fars=far[1].text.strip()
+    try:
+      a=float(fars)
+    except:
+      fars=None
+    farsell.append(fars)
+    if len(farsell)>=3 or len(farbuy)>=3:
+      break
+  cur.execute('UPDATE Currency SET (遠期10日買進_far10dbuy,遠期10日賣出_10daysell )=(?,?) WHERE id=?', (farbuy[0],farsell[0],count))
+  cur.execute('UPDATE Currency SET (遠期30日買進_far30dbuy,遠期30日賣出_30daysell )=(?,?) WHERE id=?', (farbuy[1],farsell[1],count))
+  cur.execute('UPDATE Currency SET (遠期60日買進_far60dbuy,遠期60日賣出_60daysell )=(?,?) WHERE id=?', (farbuy[2],farsell[2],count))
   #在現有database項目中更新資料
   count+=1
 conn.commit()
-  # print(far10b,far10s)
